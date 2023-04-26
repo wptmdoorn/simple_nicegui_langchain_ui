@@ -25,7 +25,7 @@ Follow these steps to set up the project on your local machine:
 
 1. **Clone the repository**: Open a terminal or command prompt and run the following command to clone the repository:
 
-```git clone https://github.com/yourusername/simple-chat-interface.git```
+```git clone https://github.com/wptmdoorn/simple_nicegui_langchain_ui.git```
 
 
 2. **Install requirements**: Navigate to the project directory and run the following command to install the required packages:
@@ -36,9 +36,9 @@ Follow these steps to set up the project on your local machine:
 <a name="configuration"></a>
 ## Configuration
 
-1. **Create a .env file**: Create a new file in the project directory named `.env`.
+1. **Create a .env file**: Rename the .envtemplate file to .env
 
-2. **Add API Key**: Obtain an API key for the LangChain service. Open the `.env` file and add the following line, replacing `your_api_key` with your actual API key:
+2. **Add API Key**: Obtain an API key for OpenAI. Open the `.env` file and add replace the `OPENAI_API_KEY` with your actual API key
 
 
 <a name="running"></a>
@@ -56,8 +56,6 @@ Now, you can interact with the chat interface using the NiceGUI window.
 
 To get a better understanding of how the chat interface works, check out this short video showcasing the functionality of the project:
 
-[![Chat Interface with NiceGUI and LangChain](http://img.youtube.com/vi/your_video_id/0.jpg)](http://www.youtube.com/watch?v=your_video_id "Chat Interface with NiceGUI and LangChain")
-
-Replace `your_video_id` with the actual YouTube video ID you want to showcase.
+[video](https://user-images.githubusercontent.com/26939682/234681682-056a05b7-5202-4d93-8bab-4af189e07b60.mp4)
 
 That's it! You now have a fully functional chat interface powered by NiceGUI and LangChain. Enjoy chatting!
