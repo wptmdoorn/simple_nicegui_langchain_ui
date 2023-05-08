@@ -1,70 +1,76 @@
-"""
-A simple chat application built with NiceGUI and OpenAI GPT-3.
+#!/usr/bin/env python3
+from typing import List, Tuple, Union
 
-This script sets up a basic chat application using the NiceGUI library for the user interface
-and the OpenAI GPT-3 model for the AI chatbot. Users can send messages to the chatbot and
-receive responses in real-time.
-"""
+from langchain.chains import ConversationChain
+from langchain.chat_models import ChatOpenAI
 
-from nicegui import ui, Client
-from langchain.llms import OpenAI
-from dotenv import load_dotenv
+from nicegui import Client, ui
 
-load_dotenv()
+llm: Union[ConversationChain, None] = None 
 
-messages = []
-llm = OpenAI(model_name='gpt-3.5-turbo')
+messages: List[Tuple[str, str, str]] = []
+thinking: bool = False
+
 
 @ui.refreshable
-def chatbox() -> None:
-    """Display chat messages."""
+async def chat_messages() -> None:
     for name, text in messages:
-        ui.markdown(f'**{name}** {text}').classes('text-lg m-2')
+        ui.chat_message(text=text, name=name, sent=name == 'You')
+    if thinking:
+        ui.spinner(size='3rem').classes('self-center')
+    await ui.run_javascript('window.scrollTo(0, document.body.scrollHeight)', respond=False)
+
 
 @ui.page('/')
-async def main(client: Client) -> None:
-    """Main chat app function."""
+async def main(client: Client):
     async def send() -> None:
-        """Send user message and handle chatbot response."""
-        user_message = text.value
-        messages.append(("User", user_message))
-        messages.append(('Bot', 'Thinking...'))
+        global thinking
+        message = text.value
+        messages.append(('You', text.value))
+        thinking = True
         text.value = ''
-        text.update()
-        chatbox.refresh()
+        chat_messages.refresh()
+        await query(message)
+        thinking = False
 
-        await scroll()
-        await query(user_message)
+    async def query(message: str) -> None:
+        global llm
+        if llm is None:
+            llm = ConversationChain(llm=ChatOpenAI(model_name='gpt-3.5-turbo', 
+                                       openai_api_key=openai_key.value,
+                                       max_tokens=token_slider.value))
+            
+        response = await llm.arun(message)
+        messages.append(('Bot', response))
+        chat_messages.refresh()
 
-    async def query(user_message: str) -> None:
-        """Query GPT-3 with user message and update chat with response."""
-        response = await llm.agenerate([user_message])
-        # Replace last message ('Thinking....') with response
-        messages[-1] = ('Bot', response.generations[0][0].text)
-        chatbox.refresh()
+    anchor_style = r'a:link, a:visited {color: inherit !important; text-decoration: none; font-weight: 500}'
+    ui.add_head_html(f'<style>{anchor_style}</style>')
+    await client.connected()
 
-        await scroll()
+    with ui.column().classes('w-full max-w-2xl mx-auto items-stretch'):
+        await chat_messages()
 
-    async def scroll() -> None:
-        """Scroll to the bottom of the chat window."""
-        await ui.run_javascript(f'window.scrollTo(0, document.body.scrollHeight)',
-                                respond=False)
-
-    # Create chat app UI
     with ui.header(elevated=True).style('background-color: #3874c8').classes('items-center justify-between'):
-        ui.label('NiceGUI + GPT-3').classes('text-center text-white text-2xl font-bold')
+        ui.label('Chat with your AI').classes('text-2xl')
 
-    with ui.column().classes('w-full max-w-3xl mx-auto'):
-        chatbox()
+    with ui.left_drawer(bottom_corner=True).style('background-color: #d7e3f4'):
+        ui.label('OpenAI private key').classes('text-lg mt-2')
+        openai_key = ui.input(label='Key', placeholder='Provide your key here')
+
+        ui.label('Exploration rate').classes('text-lg mt-2')
+        exploration_slider = ui.slider(min=0, max=1, value=0.5, step=0.1)
+        ui.label().bind_text_from(exploration_slider, 'value')
+
+        ui.label('Maximum length of response').classes('text-lg mt-2')
+        token_slider = ui.slider(min=100, max=4000, value=2000, step=10)
+        ui.label().bind_text_from(token_slider, 'value')
 
     with ui.footer().classes('bg-white'), ui.column().classes('w-full max-w-3xl mx-auto my-6'):
         with ui.row().classes('w-full no-wrap items-center'):
             text = ui.input(placeholder='message').props('rounded outlined input-class=mx-3') \
                 .classes('w-full self-center').on('keydown.enter', send)
-
-        ui.markdown('simple chat app built with [NiceGUI](https://nicegui.io) and [OpenAI](https://openai.com/)') \
+        ui.markdown('simple chat app built with [NiceGUI](https://nicegui.io)') \
             .classes('text-xs self-end mr-8 m-[-1em] text-primary')
 
-    await client.connected()  # Ensure run_javascript works
-
-ui.run(title='NiceGUI + GPT-3')
+ui.run(title='Chat with GPT-3 (example)')
